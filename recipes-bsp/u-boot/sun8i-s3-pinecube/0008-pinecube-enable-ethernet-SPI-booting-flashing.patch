@@ -1,0 +1,76 @@
+From 75e837b65b46775b2301da2e49b1c0584abbf12a Mon Sep 17 00:00:00 2001
+From: Daniel Fullmer <danielrf12@gmail.com>
+Date: Tue, 27 Oct 2020 18:44:03 -0700
+Subject: [PATCH 8/8] pinecube: enable ethernet, SPI booting/flashing
+
+---
+ arch/arm/dts/Makefile              |  3 ++-
+ arch/arm/dts/sun8i-s3-pinecube.dts |  4 +++-
+ configs/pinecube_defconfig         | 10 ++++++++--
+ 3 files changed, 13 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm/dts/Makefile b/arch/arm/dts/Makefile
+index 5308713df7..1487968ba7 100644
+--- a/arch/arm/dts/Makefile
++++ b/arch/arm/dts/Makefile
+@@ -586,7 +586,8 @@ dtb-$(CONFIG_MACH_SUN8I_R40) += \
+ 	sun8i-r40-bananapi-m2-ultra.dtb \
+ 	sun8i-v40-bananapi-m2-berry.dtb
+ dtb-$(CONFIG_MACH_SUN8I_V3S) += \
+-	sun8i-v3s-licheepi-zero.dtb
++	sun8i-v3s-licheepi-zero.dtb \
++	sun8i-s3-pinecube.dtb
+ dtb-$(CONFIG_MACH_SUN50I_H5) += \
+ 	sun50i-h5-bananapi-m2-plus.dtb \
+ 	sun50i-h5-emlid-neutis-n5-devboard.dtb \
+diff --git a/arch/arm/dts/sun8i-s3-pinecube.dts b/arch/arm/dts/sun8i-s3-pinecube.dts
+index 9bab6b7f40..f83f16a83d 100644
+--- a/arch/arm/dts/sun8i-s3-pinecube.dts
++++ b/arch/arm/dts/sun8i-s3-pinecube.dts
+@@ -13,7 +13,9 @@
+ 	compatible = "pine64,pinecube", "allwinner,sun8i-s3";
+ 
+ 	aliases {
++		ethernet0 = &emac;
+ 		serial0 = &uart2;
++		spi0 = &spi0;
+ 	};
+ 
+ 	chosen {
+@@ -214,7 +216,7 @@
+ 	flash@0 {
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
+-		compatible = "winbond,w25q128", "jedec,spi-nor";
++		compatible = "xtx,xt25f128b", "jedec,spi-nor";
+ 		reg = <0>;
+ 		spi-max-frequency = <40000000>;
+ 	};
+diff --git a/configs/pinecube_defconfig b/configs/pinecube_defconfig
+index 107562ee49..fec01aeb64 100644
+--- a/configs/pinecube_defconfig
++++ b/configs/pinecube_defconfig
+@@ -6,12 +6,18 @@ CONFIG_SUNXI_DRAM_DDR3_1333=y
+ CONFIG_DRAM_CLK=504
+ CONFIG_DRAM_ODT_EN=y
+ CONFIG_I2C0_ENABLE=y
+-CONFIG_DEFAULT_DEVICE_TREE="sun8i-s3-pinecube"
+ CONFIG_SPL_I2C_SUPPORT=y
+-# CONFIG_NETDEVICES is not set
++CONFIG_DEFAULT_DEVICE_TREE="sun8i-s3-pinecube"
++CONFIG_DM_MTD=y
++CONFIG_DM_SPI_FLASH=y
++CONFIG_SPI_FLASH_SFDP_SUPPORT=y
++CONFIG_SPI_FLASH_XTX=y
++CONFIG_SUN8I_EMAC=y
+ CONFIG_AXP209_POWER=y
+ CONFIG_AXP_DCDC2_VOLT=1250
+ CONFIG_AXP_DCDC3_VOLT=3300
+ CONFIG_AXP_ALDO3_VOLT_SLOPE_08=y
+ CONFIG_AXP_ALDO3_INRUSH_QUIRK=y
+ CONFIG_CONS_INDEX=3
++CONFIG_SPI=y
++CONFIG_DM_SPI=y
+-- 
+2.29.1
+

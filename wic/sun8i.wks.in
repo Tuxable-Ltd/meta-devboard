@@ -1,0 +1,4 @@
+bootloader --ptable msdos
+
+part uboot	--align 8 --source rawcopy --no-table --sourceparams="file=${SPL_BINARY}"
+part /		--align 2048 --active --source rootfs --fstype=ext4 --label rootfs

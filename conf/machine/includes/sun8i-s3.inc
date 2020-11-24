@@ -7,7 +7,7 @@ MACHINE_FEATURES = "usbhost"
 SERIAL_CONSOLES ?= "115200n8;ttyS0"
 
 KERNEL_IMAGETYPE = "zImage"
-KBUILD_DEFCONFIG = "multi_v7_defconfig"
+KBUILD_DEFCONFIG = "sunxi_defconfig"
 
 require kernel-version.inc
 

@@ -1,0 +1,1853 @@
+From patchwork Mon Oct 26 14:15:59 2020
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+X-Patchwork-Submitter: Icenowy Zheng <icenowy@aosc.io>
+X-Patchwork-Id: 1387776
+X-Patchwork-Delegate: jagannadh.teki@gmail.com
+Return-Path: <u-boot-bounces@lists.denx.de>
+X-Original-To: incoming@patchwork.ozlabs.org
+Delivered-To: patchwork-incoming@bilbo.ozlabs.org
+Authentication-Results: ozlabs.org;
+ spf=pass (sender SPF authorized) smtp.mailfrom=lists.denx.de
+ (client-ip=85.214.62.61; helo=phobos.denx.de;
+ envelope-from=u-boot-bounces@lists.denx.de; receiver=<UNKNOWN>)
+Authentication-Results: ozlabs.org;
+ dmarc=none (p=none dis=none) header.from=aosc.io
+Authentication-Results: ozlabs.org;
+	dkim=fail reason="signature verification failed" (1024-bit key;
+ unprotected) header.d=mymailcheap.com header.i=@mymailcheap.com
+ header.a=rsa-sha256 header.s=default header.b=VcZUm+1V;
+	dkim=fail reason="signature verification failed" (1024-bit key;
+ unprotected) header.d=aosc.io header.i=@aosc.io header.a=rsa-sha256
+ header.s=default header.b=OkosSWjP;
+	dkim-atps=neutral
+Received: from phobos.denx.de (phobos.denx.de [85.214.62.61])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest
+ SHA256)
+	(No client certificate requested)
+	by ozlabs.org (Postfix) with ESMTPS id 4CKcNK2jjbz9sVS
+	for <incoming@patchwork.ozlabs.org>; Tue, 27 Oct 2020 01:17:01 +1100 (AEDT)
+Received: from h2850616.stratoserver.net (localhost [IPv6:::1])
+	by phobos.denx.de (Postfix) with ESMTP id 8DA858248D;
+	Mon, 26 Oct 2020 15:16:48 +0100 (CET)
+Authentication-Results: phobos.denx.de;
+ dmarc=none (p=none dis=none) header.from=aosc.io
+Authentication-Results: phobos.denx.de;
+ spf=pass smtp.mailfrom=u-boot-bounces@lists.denx.de
+Authentication-Results: phobos.denx.de;
+	dkim=fail reason="signature verification failed" (1024-bit key;
+ unprotected) header.d=mymailcheap.com header.i=@mymailcheap.com
+ header.b="VcZUm+1V";
+	dkim=fail reason="signature verification failed" (1024-bit key;
+ unprotected) header.d=aosc.io header.i=@aosc.io header.b="OkosSWjP";
+	dkim-atps=neutral
+Received: by phobos.denx.de (Postfix, from userid 109)
+ id 78C5F8248B; Mon, 26 Oct 2020 15:16:46 +0100 (CET)
+X-Spam-Checker-Version: SpamAssassin 3.4.2 (2018-09-13) on phobos.denx.de
+X-Spam-Level: 
+X-Spam-Status: No, score=-2.0 required=5.0 tests=BAYES_00,DKIM_SIGNED,
+ DKIM_VALID,DKIM_VALID_AU,SPF_HELO_NONE,URIBL_BLOCKED autolearn=ham
+ autolearn_force=no version=3.4.2
+Received: from relay2.mymailcheap.com (relay2.mymailcheap.com
+ [217.182.66.162])
+ (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
+ (No client certificate requested)
+ by phobos.denx.de (Postfix) with ESMTPS id 017DC8247D
+ for <u-boot@lists.denx.de>; Mon, 26 Oct 2020 15:16:43 +0100 (CET)
+Authentication-Results: phobos.denx.de;
+ dmarc=none (p=none dis=none) header.from=aosc.io
+Authentication-Results: phobos.denx.de; spf=pass smtp.mailfrom=icenowy@aosc.io
+Received: from filter1.mymailcheap.com (filter1.mymailcheap.com
+ [149.56.130.247])
+ by relay2.mymailcheap.com (Postfix) with ESMTPS id 8039F3EDEC;
+ Mon, 26 Oct 2020 15:16:43 +0100 (CET)
+Received: from localhost (localhost [127.0.0.1])
+ by filter1.mymailcheap.com (Postfix) with ESMTP id BEA1B2A0F9;
+ Mon, 26 Oct 2020 10:16:42 -0400 (EDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple; d=mymailcheap.com;
+ s=default; t=1603721802;
+ bh=bVnjtqe0SkVSR6qdteHWfrkuafcICfoQdmpluAXix2M=;
+ h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+ b=VcZUm+1VFsVrxID6YYQEMzzCg8wJvpFbqp/qlST+cvzMvJw4wExkBSL7L3piGge5S
+ 9TbavEeKne2euP7+U1JyaeWT7yS0ZdpDIo8pcn5TX1nTQZ8/wL+bPrRehxTi0fd1J7
+ LAOfTDUVVI7vDi04HJIp11lyp2s6HZlL8Z0+xkxs=
+Received: from filter1.mymailcheap.com ([127.0.0.1])
+ by localhost (filter1.mymailcheap.com [127.0.0.1]) (amavisd-new, port 10024)
+ with ESMTP id dC-ne3UvPeZj; Mon, 26 Oct 2020 10:16:42 -0400 (EDT)
+Received: from mail20.mymailcheap.com (mail20.mymailcheap.com [51.83.111.147])
+ (using TLSv1.2 with cipher ADH-AES256-GCM-SHA384 (256/256 bits))
+ (No client certificate requested)
+ by filter1.mymailcheap.com (Postfix) with ESMTPS;
+ Mon, 26 Oct 2020 10:16:41 -0400 (EDT)
+Received: from [213.133.102.83] (ml.mymailcheap.com [213.133.102.83])
+ by mail20.mymailcheap.com (Postfix) with ESMTP id DE56B41AB9;
+ Mon, 26 Oct 2020 14:16:40 +0000 (UTC)
+Authentication-Results: mail20.mymailcheap.com; dkim=pass (1024-bit key;
+ unprotected) header.d=aosc.io header.i=@aosc.io header.b="OkosSWjP";
+ dkim-atps=neutral
+AI-Spam-Status: Not processed
+Received: from ice-e5v2.lan (unknown [59.41.160.100])
+ (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+ key-exchange ECDHE (P-256) server-signature RSA-PSS (2048 bits) server-digest
+ SHA256) (No client certificate requested)
+ by mail20.mymailcheap.com (Postfix) with ESMTPSA id BB08441ABA;
+ Mon, 26 Oct 2020 14:16:27 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple; d=aosc.io; s=default;
+ t=1603721790; bh=bVnjtqe0SkVSR6qdteHWfrkuafcICfoQdmpluAXix2M=;
+ h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+ b=OkosSWjPmiAB7mmKIRmMsQ62eLOkqnqxizL7M9ag8terrSAkyyKqBVGDd+3PKrLs3
+ P2rRA/An6SMV2Ry+Q2wQZ/cq+QBR/jZjQSkOTansHzyVs30Vu+9/ocPsPsRh/fRAWL
+ 7R+gxeZlY1DPM8JGSGynZBqRV6RTzzGnBBTlGbQs=
+From: Icenowy Zheng <icenowy@aosc.io>
+To: Jagan Teki <jagan@amarulasolutions.com>,
+ Maxime Ripard <mripard@kernel.org>, Hans de Goede <hdegoede@redhat.com>,
+ Jaehoon Chung <jh80.chung@samsung.com>
+Cc: u-boot@lists.denx.de, linux-sunxi@googlegroups.com,
+ Icenowy Zheng <icenowy@aosc.io>
+Subject: [PATCH 1/6] sunxi: add V3/S3 support
+Date: Mon, 26 Oct 2020 22:15:59 +0800
+Message-Id: <20201026141604.2944417-2-icenowy@aosc.io>
+X-Mailer: git-send-email 2.28.0
+In-Reply-To: <20201026141604.2944417-1-icenowy@aosc.io>
+References: <20201026141604.2944417-1-icenowy@aosc.io>
+MIME-Version: 1.0
+X-Rspamd-Queue-Id: DE56B41AB9
+X-Spamd-Result: default: False [4.90 / 20.00]; ARC_NA(0.00)[];
+ RCVD_VIA_SMTP_AUTH(0.00)[];
+ R_DKIM_ALLOW(0.00)[aosc.io:s=default];
+ RECEIVED_SPAMHAUS_PBL(0.00)[59.41.160.100:received];
+ FROM_HAS_DN(0.00)[]; TO_DN_SOME(0.00)[];
+ R_MISSING_CHARSET(2.50)[]; TO_MATCH_ENVRCPT_ALL(0.00)[];
+ MIME_GOOD(-0.10)[text/plain]; DMARC_NA(0.00)[aosc.io];
+ BROKEN_CONTENT_TYPE(1.50)[]; R_SPF_SOFTFAIL(0.00)[~all:c];
+ ML_SERVERS(-3.10)[213.133.102.83]; DKIM_TRACE(0.00)[aosc.io:+];
+ RCPT_COUNT_SEVEN(0.00)[7]; MID_CONTAINS_FROM(1.00)[];
+ RCVD_NO_TLS_LAST(0.10)[]; FROM_EQ_ENVFROM(0.00)[];
+ MIME_TRACE(0.00)[0:+];
+ ASN(0.00)[asn:24940, ipnet:213.133.96.0/19, country:DE];
+ RCVD_COUNT_TWO(0.00)[2];
+ HFILTER_HELO_BAREIP(3.00)[213.133.102.83,1]
+X-Rspamd-Server: mail20.mymailcheap.com
+X-BeenThere: u-boot@lists.denx.de
+X-Mailman-Version: 2.1.34
+Precedence: list
+List-Id: U-Boot discussion <u-boot.lists.denx.de>
+List-Unsubscribe: <https://lists.denx.de/options/u-boot>,
+ <mailto:u-boot-request@lists.denx.de?subject=unsubscribe>
+List-Archive: <https://lists.denx.de/pipermail/u-boot/>
+List-Post: <mailto:u-boot@lists.denx.de>
+List-Help: <mailto:u-boot-request@lists.denx.de?subject=help>
+List-Subscribe: <https://lists.denx.de/listinfo/u-boot>,
+ <mailto:u-boot-request@lists.denx.de?subject=subscribe>
+Errors-To: u-boot-bounces@lists.denx.de
+Sender: "U-Boot" <u-boot-bounces@lists.denx.de>
+X-Virus-Scanned: clamav-milter 0.102.3 at phobos.denx.de
+X-Virus-Status: Clean
+
+Allwinner V3/Sochip S3 uses the same die with Allwinner V3s/S3L, but V3 comes
+with no co-packaged DDR (DDR3 is usually used externally), and S3L comes
+with co-packaged DDR3.
+
+Add support for Allwinner V3/S3 chips by add SoC names to original V3s
+choice, and allow to select DDR3.
+
+Signed-off-by: Icenowy Zheng <icenowy@aosc.io>
+---
+ arch/arm/mach-sunxi/Kconfig | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/arch/arm/mach-sunxi/Kconfig b/arch/arm/mach-sunxi/Kconfig
+index be0822bfb7..31339ac2a1 100644
+--- a/arch/arm/mach-sunxi/Kconfig
++++ b/arch/arm/mach-sunxi/Kconfig
+@@ -253,7 +253,7 @@ config MACH_SUN8I_R40
+ 	select PHY_SUN4I_USB
+ 
+ config MACH_SUN8I_V3S
+-	bool "sun8i (Allwinner V3s)"
++	bool "sun8i (Allwinner V3/V3s/S3/S3L)"
+ 	select CPU_V7A
+ 	select CPU_V7_HAS_NONSEC
+ 	select CPU_V7_HAS_VIRT
+@@ -363,7 +363,6 @@ choice
+ config SUNXI_DRAM_DDR3_1333
+ 	bool "DDR3 1333"
+ 	select SUNXI_DRAM_DDR3
+-	depends on !MACH_SUN8I_V3S
+ 	---help---
+ 	This option is the original only supported memory type, which suits
+ 	many H3/H5/A64 boards available now.
+
+From patchwork Mon Oct 26 14:18:01 2020
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+X-Patchwork-Submitter: Icenowy Zheng <icenowy@aosc.io>
+X-Patchwork-Id: 1387779
+X-Patchwork-Delegate: jagannadh.teki@gmail.com
+Return-Path: <u-boot-bounces@lists.denx.de>
+X-Original-To: incoming@patchwork.ozlabs.org
+Delivered-To: patchwork-incoming@bilbo.ozlabs.org
+Authentication-Results: ozlabs.org;
+ spf=pass (sender SPF authorized) smtp.mailfrom=lists.denx.de
+ (client-ip=85.214.62.61; helo=phobos.denx.de;
+ envelope-from=u-boot-bounces@lists.denx.de; receiver=<UNKNOWN>)
+Authentication-Results: ozlabs.org;
+ dmarc=none (p=none dis=none) header.from=aosc.io
+Authentication-Results: ozlabs.org;
+	dkim=fail reason="signature verification failed" (1024-bit key;
+ unprotected) header.d=mymailcheap.com header.i=@mymailcheap.com
+ header.a=rsa-sha256 header.s=default header.b=svXTrWJz;
+	dkim=fail reason="signature verification failed" (1024-bit key;
+ unprotected) header.d=aosc.io header.i=@aosc.io header.a=rsa-sha256
+ header.s=default header.b=ypl54JIU;
+	dkim-atps=neutral
+Received: from phobos.denx.de (phobos.denx.de [85.214.62.61])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits))
+	(No client certificate requested)
+	by ozlabs.org (Postfix) with ESMTPS id 4CKcQc5lrnz9sSG
+	for <incoming@patchwork.ozlabs.org>; Tue, 27 Oct 2020 01:19:04 +1100 (AEDT)
+Received: from h2850616.stratoserver.net (localhost [IPv6:::1])
+	by phobos.denx.de (Postfix) with ESMTP id A9B58806C5;
+	Mon, 26 Oct 2020 15:19:00 +0100 (CET)
+Authentication-Results: phobos.denx.de;
+ dmarc=none (p=none dis=none) header.from=aosc.io
+Authentication-Results: phobos.denx.de;
+ spf=pass smtp.mailfrom=u-boot-bounces@lists.denx.de
+Authentication-Results: phobos.denx.de;
+	dkim=fail reason="signature verification failed" (1024-bit key;
+ unprotected) header.d=mymailcheap.com header.i=@mymailcheap.com
+ header.b="svXTrWJz";
+	dkim=fail reason="signature verification failed" (1024-bit key;
+ unprotected) header.d=aosc.io header.i=@aosc.io header.b="ypl54JIU";
+	dkim-atps=neutral
+Received: by phobos.denx.de (Postfix, from userid 109)
+ id 0615381F7C; Mon, 26 Oct 2020 15:18:59 +0100 (CET)
+X-Spam-Checker-Version: SpamAssassin 3.4.2 (2018-09-13) on phobos.denx.de
+X-Spam-Level: 
+X-Spam-Status: No, score=-2.0 required=5.0 tests=BAYES_00,DKIM_SIGNED,
+ DKIM_VALID,DKIM_VALID_AU,SPF_HELO_NONE,URIBL_BLOCKED autolearn=ham
+ autolearn_force=no version=3.4.2
+Received: from relay2.mymailcheap.com (relay2.mymailcheap.com
+ [217.182.66.162])
+ (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
+ (No client certificate requested)
+ by phobos.denx.de (Postfix) with ESMTPS id A15E0801D8
+ for <u-boot@lists.denx.de>; Mon, 26 Oct 2020 15:18:56 +0100 (CET)
+Authentication-Results: phobos.denx.de;
+ dmarc=none (p=none dis=none) header.from=aosc.io
+Authentication-Results: phobos.denx.de; spf=pass smtp.mailfrom=icenowy@aosc.io
+Received: from filter2.mymailcheap.com (filter2.mymailcheap.com
+ [91.134.140.82])
+ by relay2.mymailcheap.com (Postfix) with ESMTPS id 54BC73EDEC;
+ Mon, 26 Oct 2020 15:18:56 +0100 (CET)
+Received: from localhost (localhost [127.0.0.1])
+ by filter2.mymailcheap.com (Postfix) with ESMTP id 3793C2A7E7;
+ Mon, 26 Oct 2020 15:18:56 +0100 (CET)
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple; d=mymailcheap.com;
+ s=default; t=1603721936;
+ bh=7UTDyizut3J6cP0Bd2ecDY+HWS49tpTo4n1wQkTsaAA=;
+ h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+ b=svXTrWJzVoZ5aItJ1aaE3oAhZ2lY52uKHppWzO6rTuoJHWAoHtPXVNJRuAfEaRXw7
+ hDKjMji/dxmBxMtOS07CSbi8DUZQZnBwE2ObBCMLaJsI1RSew6cPk6Qg+sR5NPOAmN
+ O62WGFMC0zReUhHbZnnDf1UNbEbDExpxnJcZUXwM=
+Received: from filter2.mymailcheap.com ([127.0.0.1])
+ by localhost (filter2.mymailcheap.com [127.0.0.1]) (amavisd-new, port 10024)
+ with ESMTP id 22WdpuhJxykF; Mon, 26 Oct 2020 15:18:55 +0100 (CET)
+Received: from mail20.mymailcheap.com (mail20.mymailcheap.com [51.83.111.147])
+ (using TLSv1.2 with cipher ADH-AES256-GCM-SHA384 (256/256 bits))
+ (No client certificate requested)
+ by filter2.mymailcheap.com (Postfix) with ESMTPS;
+ Mon, 26 Oct 2020 15:18:55 +0100 (CET)
+Received: from [213.133.102.83] (ml.mymailcheap.com [213.133.102.83])
+ by mail20.mymailcheap.com (Postfix) with ESMTP id CFF4741AB9;
+ Mon, 26 Oct 2020 14:18:54 +0000 (UTC)
+Authentication-Results: mail20.mymailcheap.com; dkim=pass (1024-bit key;
+ unprotected) header.d=aosc.io header.i=@aosc.io header.b="ypl54JIU";
+ dkim-atps=neutral
+AI-Spam-Status: Not processed
+Received: from ice-e5v2.lan (unknown [59.41.160.100])
+ (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+ key-exchange ECDHE (P-256) server-signature RSA-PSS (2048 bits) server-digest
+ SHA256) (No client certificate requested)
+ by mail20.mymailcheap.com (Postfix) with ESMTPSA id A9B2241AB9;
+ Mon, 26 Oct 2020 14:18:40 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple; d=aosc.io; s=default;
+ t=1603721922; bh=7UTDyizut3J6cP0Bd2ecDY+HWS49tpTo4n1wQkTsaAA=;
+ h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+ b=ypl54JIUDNeygOtROW1kF6kxMgopoIPxaRxyRWuVOgjNIJZMoBdY43hSXXImHuRmX
+ 5wfbr85fOiGbpYd3UqTZjgvvMFy9NoswkScr0bURlvSk+wEVQ3fGsdhiDlvy8t7Myt
+ f2GyUk86dn+NAjFSEYqlzrOSfz/yIybA3+PVbr3E=
+From: Icenowy Zheng <icenowy@aosc.io>
+To: Jagan Teki <jagan@amarulasolutions.com>,
+ Maxime Ripard <mripard@kernel.org>, Hans de Goede <hdegoede@redhat.com>,
+ Jaehoon Chung <jh80.chung@samsung.com>
+Cc: u-boot@lists.denx.de, linux-sunxi@googlegroups.com,
+ Icenowy Zheng <icenowy@aosc.io>
+Subject: [PATCH 2/6] sunxi: gpio: introduce compatible string for V3 GPIO
+Date: Mon, 26 Oct 2020 22:18:01 +0800
+Message-Id: <20201026141805.2944823-1-icenowy@aosc.io>
+X-Mailer: git-send-email 2.28.0
+In-Reply-To: <20201026141604.2944417-1-icenowy@aosc.io>
+References: <20201026141604.2944417-1-icenowy@aosc.io>
+MIME-Version: 1.0
+X-Rspamd-Queue-Id: CFF4741AB9
+X-Spamd-Result: default: False [4.90 / 20.00]; ARC_NA(0.00)[];
+ RCVD_VIA_SMTP_AUTH(0.00)[];
+ R_DKIM_ALLOW(0.00)[aosc.io:s=default];
+ RECEIVED_SPAMHAUS_PBL(0.00)[59.41.160.100:received];
+ FROM_HAS_DN(0.00)[]; TO_DN_SOME(0.00)[];
+ R_MISSING_CHARSET(2.50)[]; TO_MATCH_ENVRCPT_ALL(0.00)[];
+ MIME_GOOD(-0.10)[text/plain]; DMARC_NA(0.00)[aosc.io];
+ BROKEN_CONTENT_TYPE(1.50)[]; R_SPF_SOFTFAIL(0.00)[~all:c];
+ ML_SERVERS(-3.10)[213.133.102.83]; DKIM_TRACE(0.00)[aosc.io:+];
+ RCPT_COUNT_SEVEN(0.00)[7]; MID_CONTAINS_FROM(1.00)[];
+ RCVD_NO_TLS_LAST(0.10)[]; FROM_EQ_ENVFROM(0.00)[];
+ MIME_TRACE(0.00)[0:+];
+ ASN(0.00)[asn:24940, ipnet:213.133.96.0/19, country:DE];
+ RCVD_COUNT_TWO(0.00)[2];
+ HFILTER_HELO_BAREIP(3.00)[213.133.102.83,1]
+X-Rspamd-Server: mail20.mymailcheap.com
+X-BeenThere: u-boot@lists.denx.de
+X-Mailman-Version: 2.1.34
+Precedence: list
+List-Id: U-Boot discussion <u-boot.lists.denx.de>
+List-Unsubscribe: <https://lists.denx.de/options/u-boot>,
+ <mailto:u-boot-request@lists.denx.de?subject=unsubscribe>
+List-Archive: <https://lists.denx.de/pipermail/u-boot/>
+List-Post: <mailto:u-boot@lists.denx.de>
+List-Help: <mailto:u-boot-request@lists.denx.de?subject=help>
+List-Subscribe: <https://lists.denx.de/listinfo/u-boot>,
+ <mailto:u-boot-request@lists.denx.de?subject=subscribe>
+Errors-To: u-boot-bounces@lists.denx.de
+Sender: "U-Boot" <u-boot-bounces@lists.denx.de>
+X-Virus-Scanned: clamav-milter 0.102.3 at phobos.denx.de
+X-Virus-Status: Clean
+
+A new compatible string is introduced for V3 GPIO, because it has more
+pins available than V3s.
+
+Add the compatible string to the GPIO driver.
+
+Signed-off-by: Icenowy Zheng <icenowy@aosc.io>
+---
+ drivers/gpio/sunxi_gpio.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/gpio/sunxi_gpio.c b/drivers/gpio/sunxi_gpio.c
+index 3efccf496f..02c3471b56 100644
+--- a/drivers/gpio/sunxi_gpio.c
++++ b/drivers/gpio/sunxi_gpio.c
+@@ -351,6 +351,7 @@ static const struct udevice_id sunxi_gpio_ids[] = {
+ 	ID("allwinner,sun8i-a83t-pinctrl",	a_all),
+ 	ID("allwinner,sun8i-h3-pinctrl",	a_all),
+ 	ID("allwinner,sun8i-r40-pinctrl",	a_all),
++	ID("allwinner,sun8i-v3-pinctrl",	a_all),
+ 	ID("allwinner,sun8i-v3s-pinctrl",	a_all),
+ 	ID("allwinner,sun9i-a80-pinctrl",	a_all),
+ 	ID("allwinner,sun50i-a64-pinctrl",	a_all),
+
+From patchwork Mon Oct 26 14:18:02 2020
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+X-Patchwork-Submitter: Icenowy Zheng <icenowy@aosc.io>
+X-Patchwork-Id: 1387781
+X-Patchwork-Delegate: jagannadh.teki@gmail.com
+Return-Path: <u-boot-bounces@lists.denx.de>
+X-Original-To: incoming@patchwork.ozlabs.org
+Delivered-To: patchwork-incoming@bilbo.ozlabs.org
+Authentication-Results: ozlabs.org;
+ spf=pass (sender SPF authorized) smtp.mailfrom=lists.denx.de
+ (client-ip=85.214.62.61; helo=phobos.denx.de;
+ envelope-from=u-boot-bounces@lists.denx.de; receiver=<UNKNOWN>)
+Authentication-Results: ozlabs.org;
+ dmarc=none (p=none dis=none) header.from=aosc.io
+Authentication-Results: ozlabs.org;
+	dkim=fail reason="signature verification failed" (1024-bit key;
+ unprotected) header.d=mymailcheap.com header.i=@mymailcheap.com
+ header.a=rsa-sha256 header.s=default header.b=Xj12vdHY;
+	dkim=fail reason="signature verification failed" (1024-bit key;
+ unprotected) header.d=aosc.io header.i=@aosc.io header.a=rsa-sha256
+ header.s=default header.b=wwGs2w8z;
+	dkim-atps=neutral
+Received: from phobos.denx.de (phobos.denx.de [85.214.62.61])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits))
+	(No client certificate requested)
+	by ozlabs.org (Postfix) with ESMTPS id 4CKcQr4ZCbz9sV0
+	for <incoming@patchwork.ozlabs.org>; Tue, 27 Oct 2020 01:19:16 +1100 (AEDT)
+Received: from h2850616.stratoserver.net (localhost [IPv6:::1])
+	by phobos.denx.de (Postfix) with ESMTP id D90D782483;
+	Mon, 26 Oct 2020 15:19:13 +0100 (CET)
+Authentication-Results: phobos.denx.de;
+ dmarc=none (p=none dis=none) header.from=aosc.io
+Authentication-Results: phobos.denx.de;
+ spf=pass smtp.mailfrom=u-boot-bounces@lists.denx.de
+Authentication-Results: phobos.denx.de;
+	dkim=fail reason="signature verification failed" (1024-bit key;
+ unprotected) header.d=mymailcheap.com header.i=@mymailcheap.com
+ header.b="Xj12vdHY";
+	dkim=fail reason="signature verification failed" (1024-bit key;
+ unprotected) header.d=aosc.io header.i=@aosc.io header.b="wwGs2w8z";
+	dkim-atps=neutral
+Received: by phobos.denx.de (Postfix, from userid 109)
+ id E181982483; Mon, 26 Oct 2020 15:19:11 +0100 (CET)
+X-Spam-Checker-Version: SpamAssassin 3.4.2 (2018-09-13) on phobos.denx.de
+X-Spam-Level: 
+X-Spam-Status: No, score=-2.0 required=5.0 tests=BAYES_00,DKIM_SIGNED,
+ DKIM_VALID,DKIM_VALID_AU,SPF_HELO_NONE,URIBL_BLOCKED autolearn=ham
+ autolearn_force=no version=3.4.2
+Received: from relay1.mymailcheap.com (relay1.mymailcheap.com [149.56.97.132])
+ (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
+ (No client certificate requested)
+ by phobos.denx.de (Postfix) with ESMTPS id 308558248E
+ for <u-boot@lists.denx.de>; Mon, 26 Oct 2020 15:19:07 +0100 (CET)
+Authentication-Results: phobos.denx.de;
+ dmarc=none (p=none dis=none) header.from=aosc.io
+Authentication-Results: phobos.denx.de; spf=pass smtp.mailfrom=icenowy@aosc.io
+Received: from filter2.mymailcheap.com (filter2.mymailcheap.com
+ [91.134.140.82])
+ by relay1.mymailcheap.com (Postfix) with ESMTPS id E1F893F201;
+ Mon, 26 Oct 2020 14:19:05 +0000 (UTC)
+Received: from localhost (localhost [127.0.0.1])
+ by filter2.mymailcheap.com (Postfix) with ESMTP id 3C3DF2A7E7;
+ Mon, 26 Oct 2020 15:19:05 +0100 (CET)
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple; d=mymailcheap.com;
+ s=default; t=1603721945;
+ bh=rLXEm8uuyVGmfHIS98z1pWl+S96n0Ad4Ht0vkBhCOxQ=;
+ h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+ b=Xj12vdHY1uevPqJ0extpb1z31BAeUET1zuHOoeNKDYvzdnYpY4N6SQjmZ/iiunnpr
+ 4JKzUMrJ8Nd+uecl7gZBcv79mYszx4Xi36dLN4EOa985fDLvnXNcBqdjrZ/yMZu1v4
+ 7KZhLUV10xfpm0kpIeQOnY1KyHG7iqZEWndfGm24=
+Received: from filter2.mymailcheap.com ([127.0.0.1])
+ by localhost (filter2.mymailcheap.com [127.0.0.1]) (amavisd-new, port 10024)
+ with ESMTP id Fghcc3e7wirP; Mon, 26 Oct 2020 15:19:04 +0100 (CET)
+Received: from mail20.mymailcheap.com (mail20.mymailcheap.com [51.83.111.147])
+ (using TLSv1.2 with cipher ADH-AES256-GCM-SHA384 (256/256 bits))
+ (No client certificate requested)
+ by filter2.mymailcheap.com (Postfix) with ESMTPS;
+ Mon, 26 Oct 2020 15:19:04 +0100 (CET)
+Received: from [148.251.23.173] (ml.mymailcheap.com [148.251.23.173])
+ by mail20.mymailcheap.com (Postfix) with ESMTP id D835341AB9;
+ Mon, 26 Oct 2020 14:19:03 +0000 (UTC)
+Authentication-Results: mail20.mymailcheap.com; dkim=pass (1024-bit key;
+ unprotected) header.d=aosc.io header.i=@aosc.io header.b="wwGs2w8z";
+ dkim-atps=neutral
+AI-Spam-Status: Not processed
+Received: from ice-e5v2.lan (unknown [59.41.160.100])
+ (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+ key-exchange ECDHE (P-256) server-signature RSA-PSS (2048 bits) server-digest
+ SHA256) (No client certificate requested)
+ by mail20.mymailcheap.com (Postfix) with ESMTPSA id 428BD41AB9;
+ Mon, 26 Oct 2020 14:18:46 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple; d=aosc.io; s=default;
+ t=1603721931; bh=rLXEm8uuyVGmfHIS98z1pWl+S96n0Ad4Ht0vkBhCOxQ=;
+ h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+ b=wwGs2w8zH/yGVdj7GDNJTxaTDiHAfhc+8ijHZ+Zf5aMIakjo64wirQ0aaLZd+SEZB
+ aUhseVK+E7PqILFYUoaeotFBrcSptcUTbXQaaaMSooCuzcGmg7tPIdSNSSlSN7rqmL
+ gXVzym4OP/EGnhFi98sPo7IhF9hLlTRWUw9bydqI=
+From: Icenowy Zheng <icenowy@aosc.io>
+To: Jagan Teki <jagan@amarulasolutions.com>,
+ Maxime Ripard <mripard@kernel.org>, Hans de Goede <hdegoede@redhat.com>,
+ Jaehoon Chung <jh80.chung@samsung.com>
+Cc: u-boot@lists.denx.de, linux-sunxi@googlegroups.com,
+ Icenowy Zheng <icenowy@aosc.io>
+Subject: [PATCH 3/6] clk: sunxi: add compatible string for V3
+Date: Mon, 26 Oct 2020 22:18:02 +0800
+Message-Id: <20201026141805.2944823-2-icenowy@aosc.io>
+X-Mailer: git-send-email 2.28.0
+In-Reply-To: <20201026141604.2944417-1-icenowy@aosc.io>
+References: <20201026141604.2944417-1-icenowy@aosc.io>
+MIME-Version: 1.0
+X-Rspamd-Queue-Id: D835341AB9
+X-Spamd-Result: default: False [4.90 / 20.00]; ARC_NA(0.00)[];
+ RCVD_VIA_SMTP_AUTH(0.00)[];
+ R_DKIM_ALLOW(0.00)[aosc.io:s=default];
+ RECEIVED_SPAMHAUS_PBL(0.00)[59.41.160.100:received];
+ FROM_HAS_DN(0.00)[]; TO_DN_SOME(0.00)[];
+ R_MISSING_CHARSET(2.50)[]; TO_MATCH_ENVRCPT_ALL(0.00)[];
+ MIME_GOOD(-0.10)[text/plain]; DMARC_NA(0.00)[aosc.io];
+ BROKEN_CONTENT_TYPE(1.50)[]; R_SPF_SOFTFAIL(0.00)[~all:c];
+ ML_SERVERS(-3.10)[148.251.23.173]; DKIM_TRACE(0.00)[aosc.io:+];
+ RCPT_COUNT_SEVEN(0.00)[7]; MID_CONTAINS_FROM(1.00)[];
+ RCVD_NO_TLS_LAST(0.10)[]; FROM_EQ_ENVFROM(0.00)[];
+ MIME_TRACE(0.00)[0:+];
+ ASN(0.00)[asn:24940, ipnet:148.251.0.0/16, country:DE];
+ RCVD_COUNT_TWO(0.00)[2];
+ HFILTER_HELO_BAREIP(3.00)[148.251.23.173,1]
+X-Rspamd-Server: mail20.mymailcheap.com
+X-BeenThere: u-boot@lists.denx.de
+X-Mailman-Version: 2.1.34
+Precedence: list
+List-Id: U-Boot discussion <u-boot.lists.denx.de>
+List-Unsubscribe: <https://lists.denx.de/options/u-boot>,
+ <mailto:u-boot-request@lists.denx.de?subject=unsubscribe>
+List-Archive: <https://lists.denx.de/pipermail/u-boot/>
+List-Post: <mailto:u-boot@lists.denx.de>
+List-Help: <mailto:u-boot-request@lists.denx.de?subject=help>
+List-Subscribe: <https://lists.denx.de/listinfo/u-boot>,
+ <mailto:u-boot-request@lists.denx.de?subject=subscribe>
+Errors-To: u-boot-bounces@lists.denx.de
+Sender: "U-Boot" <u-boot-bounces@lists.denx.de>
+X-Virus-Scanned: clamav-milter 0.102.3 at phobos.denx.de
+X-Virus-Status: Clean
+
+A new compatible string is introduced for V3 CCU, because it has a few
+extra features available.
+
+Add the compatible string to the clock driver. As the extra features are
+not touched, just share the description struct now.
+
+Signed-off-by: Icenowy Zheng <icenowy@aosc.io>
+---
+ drivers/clk/sunxi/clk_v3s.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/clk/sunxi/clk_v3s.c b/drivers/clk/sunxi/clk_v3s.c
+index b79446cc4f..f3fc06ab31 100644
+--- a/drivers/clk/sunxi/clk_v3s.c
++++ b/drivers/clk/sunxi/clk_v3s.c
+@@ -56,6 +56,8 @@ static int v3s_clk_bind(struct udevice *dev)
+ static const struct udevice_id v3s_clk_ids[] = {
+ 	{ .compatible = "allwinner,sun8i-v3s-ccu",
+ 	  .data = (ulong)&v3s_ccu_desc },
++	{ .compatible = "allwinner,sun8i-v3-ccu",
++	  .data = (ulong)&v3s_ccu_desc },
+ 	{ }
+ };
+ 
+
+From patchwork Mon Oct 26 14:19:34 2020
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+X-Patchwork-Submitter: Icenowy Zheng <icenowy@aosc.io>
+X-Patchwork-Id: 1387787
+X-Patchwork-Delegate: jagannadh.teki@gmail.com
+Return-Path: <u-boot-bounces@lists.denx.de>
+X-Original-To: incoming@patchwork.ozlabs.org
+Delivered-To: patchwork-incoming@bilbo.ozlabs.org
+Authentication-Results: ozlabs.org;
+ spf=pass (sender SPF authorized) smtp.mailfrom=lists.denx.de
+ (client-ip=2a01:238:438b:c500:173d:9f52:ddab:ee01; helo=phobos.denx.de;
+ envelope-from=u-boot-bounces@lists.denx.de; receiver=<UNKNOWN>)
+Authentication-Results: ozlabs.org;
+ dmarc=none (p=none dis=none) header.from=aosc.io
+Authentication-Results: ozlabs.org;
+	dkim=fail reason="signature verification failed" (1024-bit key;
+ unprotected) header.d=aosc.io header.i=@aosc.io header.a=rsa-sha256
+ header.s=default header.b=i1dz4lvZ;
+	dkim-atps=neutral
+Received: from phobos.denx.de (phobos.denx.de
+ [IPv6:2a01:238:438b:c500:173d:9f52:ddab:ee01])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits))
+	(No client certificate requested)
+	by ozlabs.org (Postfix) with ESMTPS id 4CKcRv3tJCz9sVW
+	for <incoming@patchwork.ozlabs.org>; Tue, 27 Oct 2020 01:20:11 +1100 (AEDT)
+Received: from h2850616.stratoserver.net (localhost [IPv6:::1])
+	by phobos.denx.de (Postfix) with ESMTP id E0DDC806C5;
+	Mon, 26 Oct 2020 15:20:08 +0100 (CET)
+Authentication-Results: phobos.denx.de;
+ dmarc=none (p=none dis=none) header.from=aosc.io
+Authentication-Results: phobos.denx.de;
+ spf=pass smtp.mailfrom=u-boot-bounces@lists.denx.de
+Authentication-Results: phobos.denx.de;
+	dkim=fail reason="signature verification failed" (1024-bit key;
+ unprotected) header.d=aosc.io header.i=@aosc.io header.b="i1dz4lvZ";
+	dkim-atps=neutral
+Received: by phobos.denx.de (Postfix, from userid 109)
+ id 0F58381F7C; Mon, 26 Oct 2020 15:20:07 +0100 (CET)
+X-Spam-Checker-Version: SpamAssassin 3.4.2 (2018-09-13) on phobos.denx.de
+X-Spam-Level: 
+X-Spam-Status: No, score=-2.0 required=5.0 tests=BAYES_00,DKIM_SIGNED,
+ DKIM_VALID,DKIM_VALID_AU,SPF_HELO_NONE,URIBL_BLOCKED autolearn=ham
+ autolearn_force=no version=3.4.2
+Received: from relay3.mymailcheap.com (relay3.mymailcheap.com
+ [217.182.119.155])
+ (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
+ (No client certificate requested)
+ by phobos.denx.de (Postfix) with ESMTPS id 579A0801D8
+ for <u-boot@lists.denx.de>; Mon, 26 Oct 2020 15:20:04 +0100 (CET)
+Authentication-Results: phobos.denx.de;
+ dmarc=none (p=none dis=none) header.from=aosc.io
+Authentication-Results: phobos.denx.de; spf=pass smtp.mailfrom=icenowy@aosc.io
+Received: from filter1.mymailcheap.com (filter1.mymailcheap.com
+ [149.56.130.247])
+ by relay3.mymailcheap.com (Postfix) with ESMTPS id E0F4D3F207;
+ Mon, 26 Oct 2020 15:20:03 +0100 (CET)
+Received: from localhost (localhost [127.0.0.1])
+ by filter1.mymailcheap.com (Postfix) with ESMTP id 338F22A0ED;
+ Mon, 26 Oct 2020 10:20:03 -0400 (EDT)
+Received: from filter1.mymailcheap.com ([127.0.0.1])
+ by localhost (filter1.mymailcheap.com [127.0.0.1]) (amavisd-new, port 10024)
+ with ESMTP id CTZ32Jb9hu1j; Mon, 26 Oct 2020 10:20:02 -0400 (EDT)
+Received: from mail20.mymailcheap.com (mail20.mymailcheap.com [51.83.111.147])
+ (using TLSv1.2 with cipher ADH-AES256-GCM-SHA384 (256/256 bits))
+ (No client certificate requested)
+ by filter1.mymailcheap.com (Postfix) with ESMTPS;
+ Mon, 26 Oct 2020 10:20:02 -0400 (EDT)
+Received: from [213.133.102.83] (ml.mymailcheap.com [213.133.102.83])
+ by mail20.mymailcheap.com (Postfix) with ESMTP id 3AF9C41A9E;
+ Mon, 26 Oct 2020 14:20:01 +0000 (UTC)
+Authentication-Results: mail20.mymailcheap.com; dkim=pass (1024-bit key;
+ unprotected) header.d=aosc.io header.i=@aosc.io header.b="i1dz4lvZ";
+ dkim-atps=neutral
+AI-Spam-Status: Not processed
+Received: from ice-e5v2.lan (unknown [59.41.160.100])
+ (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+ key-exchange ECDHE (P-256) server-signature RSA-PSS (2048 bits) server-digest
+ SHA256) (No client certificate requested)
+ by mail20.mymailcheap.com (Postfix) with ESMTPSA id DE6A341A9E;
+ Mon, 26 Oct 2020 14:19:52 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple; d=aosc.io; s=default;
+ t=1603721996; bh=LgZUNqLMlCILOOp+VOfL0IligAZsvuZBkSovZYo9Wrg=;
+ h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+ b=i1dz4lvZV0CbDEhx0UpNATJyMTDJkOzzPjjkG1whY/iIDjwtbKMiK0iZi1YVk64H2
+ nHcCVdipKM6OgHBxkqKerxaudHa/2hNSE8Es6HuaL+s4vuBnEw/s+bHAm5H7CUME0u
+ +hYjo9eQRldePZRhq8SA6M3kwfvn/GTxzMI7gofo=
+From: Icenowy Zheng <icenowy@aosc.io>
+To: Jagan Teki <jagan@amarulasolutions.com>,
+ Maxime Ripard <mripard@kernel.org>, Hans de Goede <hdegoede@redhat.com>,
+ Jaehoon Chung <jh80.chung@samsung.com>
+Cc: u-boot@lists.denx.de, linux-sunxi@googlegroups.com,
+ Icenowy Zheng <icenowy@aosc.io>
+Subject: [PATCH 4/6] sunxi: allow to use AXP20[39] attached to I2C0 on V3
+ series
+Date: Mon, 26 Oct 2020 22:19:34 +0800
+Message-Id: <20201026141936.2945268-1-icenowy@aosc.io>
+X-Mailer: git-send-email 2.28.0
+In-Reply-To: <20201026141604.2944417-1-icenowy@aosc.io>
+References: <20201026141604.2944417-1-icenowy@aosc.io>
+MIME-Version: 1.0
+X-Rspamd-Queue-Id: 3AF9C41A9E
+X-Spamd-Result: default: False [4.90 / 20.00]; ARC_NA(0.00)[];
+ RCVD_VIA_SMTP_AUTH(0.00)[];
+ R_DKIM_ALLOW(0.00)[aosc.io:s=default];
+ RECEIVED_SPAMHAUS_PBL(0.00)[59.41.160.100:received];
+ FROM_HAS_DN(0.00)[]; TO_DN_SOME(0.00)[];
+ R_MISSING_CHARSET(2.50)[]; TO_MATCH_ENVRCPT_ALL(0.00)[];
+ MIME_GOOD(-0.10)[text/plain]; DMARC_NA(0.00)[aosc.io];
+ BROKEN_CONTENT_TYPE(1.50)[]; R_SPF_SOFTFAIL(0.00)[~all:c];
+ ML_SERVERS(-3.10)[213.133.102.83]; DKIM_TRACE(0.00)[aosc.io:+];
+ RCPT_COUNT_SEVEN(0.00)[7]; MID_CONTAINS_FROM(1.00)[];
+ RCVD_NO_TLS_LAST(0.10)[]; FROM_EQ_ENVFROM(0.00)[];
+ MIME_TRACE(0.00)[0:+];
+ ASN(0.00)[asn:24940, ipnet:213.133.96.0/19, country:DE];
+ RCVD_COUNT_TWO(0.00)[2];
+ HFILTER_HELO_BAREIP(3.00)[213.133.102.83,1]
+X-Rspamd-Server: mail20.mymailcheap.com
+X-BeenThere: u-boot@lists.denx.de
+X-Mailman-Version: 2.1.34
+Precedence: list
+List-Id: U-Boot discussion <u-boot.lists.denx.de>
+List-Unsubscribe: <https://lists.denx.de/options/u-boot>,
+ <mailto:u-boot-request@lists.denx.de?subject=unsubscribe>
+List-Archive: <https://lists.denx.de/pipermail/u-boot/>
+List-Post: <mailto:u-boot@lists.denx.de>
+List-Help: <mailto:u-boot-request@lists.denx.de?subject=help>
+List-Subscribe: <https://lists.denx.de/listinfo/u-boot>,
+ <mailto:u-boot-request@lists.denx.de?subject=subscribe>
+Errors-To: u-boot-bounces@lists.denx.de
+Sender: "U-Boot" <u-boot-bounces@lists.denx.de>
+X-Virus-Scanned: clamav-milter 0.102.3 at phobos.denx.de
+X-Virus-Status: Clean
+
+The reference design of Allwinner V3 series uses an
+AXP203 or AXP209 PMIC attached to the I2C0 bus of the SoC, although the
+first community-available V3s board, Lichee Pi Zero, omitted it.
+
+Allow to introduce support for the PMIC on boards with it.
+
+Signed-off-by: Icenowy Zheng <icenowy@aosc.io>
+---
+ arch/arm/include/asm/arch-sunxi/gpio.h | 1 +
+ board/sunxi/board.c                    | 4 ++++
+ drivers/power/Kconfig                  | 4 ++--
+ 3 files changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/include/asm/arch-sunxi/gpio.h b/arch/arm/include/asm/arch-sunxi/gpio.h
+index a646ea6a3c..f817d328f4 100644
+--- a/arch/arm/include/asm/arch-sunxi/gpio.h
++++ b/arch/arm/include/asm/arch-sunxi/gpio.h
+@@ -158,6 +158,7 @@ enum sunxi_gpio_number {
+ #define SUN5I_GPB_TWI1		2
+ #define SUN4I_GPB_TWI2		2
+ #define SUN5I_GPB_TWI2		2
++#define SUN8I_V3S_GPB_TWI0	2
+ #define SUN4I_GPB_UART0		2
+ #define SUN5I_GPB_UART0		2
+ #define SUN8I_GPB_UART2		2
+diff --git a/board/sunxi/board.c b/board/sunxi/board.c
+index a5cf0b65c7..3796213b9f 100644
+--- a/board/sunxi/board.c
++++ b/board/sunxi/board.c
+@@ -101,6 +101,10 @@ void i2c_init_board(void)
+ 	sunxi_gpio_set_cfgpin(SUNXI_GPH(14), SUN6I_GPH_TWI0);
+ 	sunxi_gpio_set_cfgpin(SUNXI_GPH(15), SUN6I_GPH_TWI0);
+ 	clock_twi_onoff(0, 1);
++#elif defined(CONFIG_MACH_SUN8I_V3S)
++	sunxi_gpio_set_cfgpin(SUNXI_GPB(6), SUN8I_V3S_GPB_TWI0);
++	sunxi_gpio_set_cfgpin(SUNXI_GPB(7), SUN8I_V3S_GPB_TWI0);
++	clock_twi_onoff(0, 1);
+ #elif defined(CONFIG_MACH_SUN8I)
+ 	sunxi_gpio_set_cfgpin(SUNXI_GPH(2), SUN8I_GPH_TWI0);
+ 	sunxi_gpio_set_cfgpin(SUNXI_GPH(3), SUN8I_GPH_TWI0);
+diff --git a/drivers/power/Kconfig b/drivers/power/Kconfig
+index 5910926fac..02050f6f35 100644
+--- a/drivers/power/Kconfig
++++ b/drivers/power/Kconfig
+@@ -14,7 +14,7 @@ choice
+ 	default AXP209_POWER if MACH_SUN4I || MACH_SUN5I || MACH_SUN7I
+ 	default AXP221_POWER if MACH_SUN6I || MACH_SUN8I_A23 || MACH_SUN8I_A33 || MACH_SUN8I_R40
+ 	default AXP818_POWER if MACH_SUN8I_A83T
+-	default SUNXI_NO_PMIC if MACH_SUNXI_H3_H5 || MACH_SUN50I
++	default SUNXI_NO_PMIC if MACH_SUNXI_H3_H5 || MACH_SUN50I || MACH_SUN8I_V3S
+ 
+ config SUNXI_NO_PMIC
+ 	bool "board without a pmic"
+@@ -32,7 +32,7 @@ config AXP152_POWER
+ 
+ config AXP209_POWER
+ 	bool "axp209 pmic support"
+-	depends on MACH_SUN4I || MACH_SUN5I || MACH_SUN7I
++	depends on MACH_SUN4I || MACH_SUN5I || MACH_SUN7I || MACH_SUN8I_V3S
+ 	select AXP_PMIC_BUS
+ 	select CMD_POWEROFF
+ 	---help---
+
+From patchwork Mon Oct 26 14:19:35 2020
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+X-Patchwork-Submitter: Icenowy Zheng <icenowy@aosc.io>
+X-Patchwork-Id: 1387788
+X-Patchwork-Delegate: jagannadh.teki@gmail.com
+Return-Path: <u-boot-bounces@lists.denx.de>
+X-Original-To: incoming@patchwork.ozlabs.org
+Delivered-To: patchwork-incoming@bilbo.ozlabs.org
+Authentication-Results: ozlabs.org;
+ spf=pass (sender SPF authorized) smtp.mailfrom=lists.denx.de
+ (client-ip=2a01:238:438b:c500:173d:9f52:ddab:ee01; helo=phobos.denx.de;
+ envelope-from=u-boot-bounces@lists.denx.de; receiver=<UNKNOWN>)
+Authentication-Results: ozlabs.org;
+ dmarc=none (p=none dis=none) header.from=aosc.io
+Authentication-Results: ozlabs.org;
+	dkim=fail reason="signature verification failed" (1024-bit key;
+ unprotected) header.d=mymailcheap.com header.i=@mymailcheap.com
+ header.a=rsa-sha256 header.s=default header.b=CDmy/2oV;
+	dkim=fail reason="signature verification failed" (1024-bit key;
+ unprotected) header.d=aosc.io header.i=@aosc.io header.a=rsa-sha256
+ header.s=default header.b=bK2w9XrL;
+	dkim-atps=neutral
+Received: from phobos.denx.de (phobos.denx.de
+ [IPv6:2a01:238:438b:c500:173d:9f52:ddab:ee01])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits))
+	(No client certificate requested)
+	by ozlabs.org (Postfix) with ESMTPS id 4CKcSB0zY8z9sSG
+	for <incoming@patchwork.ozlabs.org>; Tue, 27 Oct 2020 01:20:25 +1100 (AEDT)
+Received: from h2850616.stratoserver.net (localhost [IPv6:::1])
+	by phobos.denx.de (Postfix) with ESMTP id 5A4E78248B;
+	Mon, 26 Oct 2020 15:20:23 +0100 (CET)
+Authentication-Results: phobos.denx.de;
+ dmarc=none (p=none dis=none) header.from=aosc.io
+Authentication-Results: phobos.denx.de;
+ spf=pass smtp.mailfrom=u-boot-bounces@lists.denx.de
+Authentication-Results: phobos.denx.de;
+	dkim=fail reason="signature verification failed" (1024-bit key;
+ unprotected) header.d=mymailcheap.com header.i=@mymailcheap.com
+ header.b="CDmy/2oV";
+	dkim=fail reason="signature verification failed" (1024-bit key;
+ unprotected) header.d=aosc.io header.i=@aosc.io header.b="bK2w9XrL";
+	dkim-atps=neutral
+Received: by phobos.denx.de (Postfix, from userid 109)
+ id 46D1A82495; Mon, 26 Oct 2020 15:20:22 +0100 (CET)
+X-Spam-Checker-Version: SpamAssassin 3.4.2 (2018-09-13) on phobos.denx.de
+X-Spam-Level: 
+X-Spam-Status: No, score=0.0 required=5.0 tests=BAYES_00,DKIM_SIGNED,
+ DKIM_VALID,DKIM_VALID_AU,PDS_OTHER_BAD_TLD,SPF_HELO_NONE,URIBL_BLOCKED
+ autolearn=no autolearn_force=no version=3.4.2
+Received: from relay1.mymailcheap.com (relay1.mymailcheap.com [149.56.97.132])
+ (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
+ (No client certificate requested)
+ by phobos.denx.de (Postfix) with ESMTPS id B1FC682465
+ for <u-boot@lists.denx.de>; Mon, 26 Oct 2020 15:20:18 +0100 (CET)
+Authentication-Results: phobos.denx.de;
+ dmarc=none (p=none dis=none) header.from=aosc.io
+Authentication-Results: phobos.denx.de; spf=pass smtp.mailfrom=icenowy@aosc.io
+Received: from filter1.mymailcheap.com (filter1.mymailcheap.com
+ [149.56.130.247])
+ by relay1.mymailcheap.com (Postfix) with ESMTPS id CEFA43F202;
+ Mon, 26 Oct 2020 14:20:17 +0000 (UTC)
+Received: from localhost (localhost [127.0.0.1])
+ by filter1.mymailcheap.com (Postfix) with ESMTP id B57022A0ED;
+ Mon, 26 Oct 2020 10:20:17 -0400 (EDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple; d=mymailcheap.com;
+ s=default; t=1603722017;
+ bh=xwyv0qM/6EL96QThcs90jvXb/ML3ERlR7LxW6OMubpU=;
+ h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+ b=CDmy/2oV9OfCNiY80K61XQUbHe7txb7JKNI7q8DBGk8ys0tQg5EdH6kLBt6hhcs1x
+ YJYZv4ZYu49MNLjd9PJAGurofinxxG307KbiFWIFplR1t/3CmBRe1fNy6HSjwe2zft
+ BD/8pggmWXKvtFUKU8Ajn7aittBLQNBAPgIggEn4=
+Received: from filter1.mymailcheap.com ([127.0.0.1])
+ by localhost (filter1.mymailcheap.com [127.0.0.1]) (amavisd-new, port 10024)
+ with ESMTP id Q1ZghushZNGY; Mon, 26 Oct 2020 10:20:16 -0400 (EDT)
+Received: from mail20.mymailcheap.com (mail20.mymailcheap.com [51.83.111.147])
+ (using TLSv1.2 with cipher ADH-AES256-GCM-SHA384 (256/256 bits))
+ (No client certificate requested)
+ by filter1.mymailcheap.com (Postfix) with ESMTPS;
+ Mon, 26 Oct 2020 10:20:16 -0400 (EDT)
+Received: from [148.251.23.173] (ml.mymailcheap.com [148.251.23.173])
+ by mail20.mymailcheap.com (Postfix) with ESMTP id 1D96441AB9;
+ Mon, 26 Oct 2020 14:20:15 +0000 (UTC)
+Authentication-Results: mail20.mymailcheap.com; dkim=pass (1024-bit key;
+ unprotected) header.d=aosc.io header.i=@aosc.io header.b="bK2w9XrL";
+ dkim-atps=neutral
+AI-Spam-Status: Not processed
+Received: from ice-e5v2.lan (unknown [59.41.160.100])
+ (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+ key-exchange ECDHE (P-256) server-signature RSA-PSS (2048 bits) server-digest
+ SHA256) (No client certificate requested)
+ by mail20.mymailcheap.com (Postfix) with ESMTPSA id 7C68B41A9E;
+ Mon, 26 Oct 2020 14:20:03 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple; d=aosc.io; s=default;
+ t=1603722008; bh=xwyv0qM/6EL96QThcs90jvXb/ML3ERlR7LxW6OMubpU=;
+ h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+ b=bK2w9XrLZHbELwmoogTKLCaHFAQIUgYPQ7ccX+mf0cNfU83MBXCawMzRwkoI/5Lsa
+ 0qSVEjFRqnxBcPMdnbSROVu5h5H6NUNuXYDKwK5ue4kL5iaN0rBqLcCDKLPjUCcAtm
+ wii1K/TkwG/gmfHNhuQFkCuhuSXt+6qSVpWiVxOk=
+From: Icenowy Zheng <icenowy@aosc.io>
+To: Jagan Teki <jagan@amarulasolutions.com>,
+ Maxime Ripard <mripard@kernel.org>, Hans de Goede <hdegoede@redhat.com>,
+ Jaehoon Chung <jh80.chung@samsung.com>
+Cc: u-boot@lists.denx.de, linux-sunxi@googlegroups.com,
+ Icenowy Zheng <icenowy@aosc.io>
+Subject: [PATCH 5/6] sunxi: dts: sync Allwinner V3s-related DTs from Linux
+ 5.10-rc1
+Date: Mon, 26 Oct 2020 22:19:35 +0800
+Message-Id: <20201026141936.2945268-2-icenowy@aosc.io>
+X-Mailer: git-send-email 2.28.0
+In-Reply-To: <20201026141604.2944417-1-icenowy@aosc.io>
+References: <20201026141604.2944417-1-icenowy@aosc.io>
+MIME-Version: 1.0
+X-Rspamd-Queue-Id: 1D96441AB9
+X-Spamd-Result: default: False [4.90 / 20.00]; ARC_NA(0.00)[];
+ RCVD_VIA_SMTP_AUTH(0.00)[];
+ R_DKIM_ALLOW(0.00)[aosc.io:s=default]; FROM_HAS_DN(0.00)[];
+ TO_DN_SOME(0.00)[]; R_MISSING_CHARSET(2.50)[];
+ TO_MATCH_ENVRCPT_ALL(0.00)[]; MIME_GOOD(-0.10)[text/plain];
+ DMARC_NA(0.00)[aosc.io]; BROKEN_CONTENT_TYPE(1.50)[];
+ R_SPF_SOFTFAIL(0.00)[~all:c];
+ ML_SERVERS(-3.10)[148.251.23.173]; DKIM_TRACE(0.00)[aosc.io:+];
+ RCPT_COUNT_SEVEN(0.00)[7]; MID_CONTAINS_FROM(1.00)[];
+ DBL_PROHIBIT(0.00)[0.0.0.34:email,0.16.200.224:email,0.0.0.1:email,0.15.66.64:email,0.0.0.2:email,0.0.0.0:email];
+ RCVD_NO_TLS_LAST(0.10)[]; FROM_EQ_ENVFROM(0.00)[];
+ MIME_TRACE(0.00)[0:+];
+ ASN(0.00)[asn:24940, ipnet:148.251.0.0/16, country:DE];
+ RCVD_COUNT_TWO(0.00)[2];
+ HFILTER_HELO_BAREIP(3.00)[148.251.23.173,1]
+X-Rspamd-Server: mail20.mymailcheap.com
+X-BeenThere: u-boot@lists.denx.de
+X-Mailman-Version: 2.1.34
+Precedence: list
+List-Id: U-Boot discussion <u-boot.lists.denx.de>
+List-Unsubscribe: <https://lists.denx.de/options/u-boot>,
+ <mailto:u-boot-request@lists.denx.de?subject=unsubscribe>
+List-Archive: <https://lists.denx.de/pipermail/u-boot/>
+List-Post: <mailto:u-boot@lists.denx.de>
+List-Help: <mailto:u-boot-request@lists.denx.de?subject=help>
+List-Subscribe: <https://lists.denx.de/listinfo/u-boot>,
+ <mailto:u-boot-request@lists.denx.de?subject=subscribe>
+Errors-To: u-boot-bounces@lists.denx.de
+Sender: "U-Boot" <u-boot-bounces@lists.denx.de>
+X-Virus-Scanned: clamav-milter 0.102.3 at phobos.denx.de
+X-Virus-Status: Clean
+
+This commit imports device tree files that are related to Allwinner V3
+series from Linux commit 3650b228f83a ("Linux 5.10-rc1").
+
+Signed-off-by: Icenowy Zheng <icenowy@aosc.io>
+---
+ arch/arm/dts/sun8i-s3-lichee-zero-plus.dts    |  53 +++
+ arch/arm/dts/sun8i-s3-pinecube.dts            | 235 +++++++++++++
+ arch/arm/dts/sun8i-v3.dtsi                    |  27 ++
+ arch/arm/dts/sun8i-v3s-licheepi-zero-dock.dts |  96 ++++++
+ arch/arm/dts/sun8i-v3s-licheepi-zero.dts      |  26 +-
+ arch/arm/dts/sun8i-v3s.dtsi                   | 318 ++++++++++++++++--
+ 6 files changed, 725 insertions(+), 30 deletions(-)
+ create mode 100644 arch/arm/dts/sun8i-s3-lichee-zero-plus.dts
+ create mode 100644 arch/arm/dts/sun8i-s3-pinecube.dts
+ create mode 100644 arch/arm/dts/sun8i-v3.dtsi
+ create mode 100644 arch/arm/dts/sun8i-v3s-licheepi-zero-dock.dts
+
+diff --git a/arch/arm/dts/sun8i-s3-lichee-zero-plus.dts b/arch/arm/dts/sun8i-s3-lichee-zero-plus.dts
+new file mode 100644
+index 0000000000..d18192d51d
+--- /dev/null
++++ b/arch/arm/dts/sun8i-s3-lichee-zero-plus.dts
+@@ -0,0 +1,53 @@
++// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
++/*
++ * Copyright (C) 2019 Icenowy Zheng <icenowy@aosc.io>
++ */
++
++/dts-v1/;
++#include "sun8i-v3.dtsi"
++
++#include <dt-bindings/gpio/gpio.h>
++
++/ {
++	model = "Sipeed Lichee Zero Plus";
++	compatible = "sipeed,lichee-zero-plus", "sochip,s3",
++		     "allwinner,sun8i-v3";
++
++	aliases {
++		serial0 = &uart0;
++	};
++
++	chosen {
++		stdout-path = "serial0:115200n8";
++	};
++
++	reg_vcc3v3: vcc3v3 {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc3v3";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++	};
++};
++
++&mmc0 {
++	broken-cd;
++	bus-width = <4>;
++	vmmc-supply = <&reg_vcc3v3>;
++	status = "okay";
++};
++
++&uart0 {
++	pinctrl-0 = <&uart0_pb_pins>;
++	pinctrl-names = "default";
++	status = "okay";
++};
++
++&usb_otg {
++	dr_mode = "peripheral";
++	status = "okay";
++};
++
++&usbphy {
++	usb0_id_det-gpios = <&pio 5 6 GPIO_ACTIVE_HIGH>;
++	status = "okay";
++};
+diff --git a/arch/arm/dts/sun8i-s3-pinecube.dts b/arch/arm/dts/sun8i-s3-pinecube.dts
+new file mode 100644
+index 0000000000..9bab6b7f40
+--- /dev/null
++++ b/arch/arm/dts/sun8i-s3-pinecube.dts
+@@ -0,0 +1,235 @@
++// SPDX-License-Identifier: (GPL-2.0+ OR X11)
++/*
++ * Copyright 2019 Icenowy Zheng <icenowy@aosc.io>
++ */
++
++/dts-v1/;
++#include "sun8i-v3.dtsi"
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/input/input.h>
++
++/ {
++	model = "PineCube IP Camera";
++	compatible = "pine64,pinecube", "allwinner,sun8i-s3";
++
++	aliases {
++		serial0 = &uart2;
++	};
++
++	chosen {
++		stdout-path = "serial0:115200n8";
++	};
++
++	leds {
++		compatible = "gpio-leds";
++
++		led1 {
++			label = "pine64:ir:led1";
++			gpios = <&pio 1 10 GPIO_ACTIVE_LOW>; /* PB10 */
++		};
++
++		led2 {
++			label = "pine64:ir:led2";
++			gpios = <&pio 1 12 GPIO_ACTIVE_LOW>; /* PB12 */
++		};
++	};
++
++	reg_vcc5v0: vcc5v0 {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc5v0";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++	};
++
++	reg_vcc_wifi: vcc-wifi {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc-wifi";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		gpio = <&pio 1 2 GPIO_ACTIVE_LOW>; /* PB2 WIFI-EN */
++		vin-supply = <&reg_dcdc3>;
++		startup-delay-us = <200000>;
++	};
++
++	wifi_pwrseq: wifi_pwrseq {
++		compatible = "mmc-pwrseq-simple";
++		reset-gpios = <&pio 1 3 GPIO_ACTIVE_LOW>; /* PB3 WIFI-RST */
++		post-power-on-delay-ms = <200>;
++	};
++};
++
++&csi1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&csi1_8bit_pins>;
++	status = "okay";
++
++	port {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		csi1_ep: endpoint {
++			remote-endpoint = <&ov5640_ep>;
++			bus-width = <8>;
++			hsync-active = <1>; /* Active high */
++			vsync-active = <0>; /* Active low */
++			data-active = <1>;  /* Active high */
++			pclk-sample = <1>;  /* Rising */
++		};
++	};
++};
++
++&emac {
++	phy-handle = <&int_mii_phy>;
++	phy-mode = "mii";
++	status = "okay";
++};
++
++&i2c0 {
++	status = "okay";
++
++	axp209: pmic@34 {
++		compatible = "x-powers,axp203",
++			     "x-powers,axp209";
++		reg = <0x34>;
++		interrupt-parent = <&gic>;
++		interrupts = <GIC_SPI 32 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-controller;
++		#interrupt-cells = <1>;
++	};
++};
++
++&i2c1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2c1_pe_pins>;
++	status = "okay";
++
++	ov5640: camera@3c {
++		compatible = "ovti,ov5640";
++		reg = <0x3c>;
++		pinctrl-names = "default";
++		pinctrl-0 = <&csi1_mclk_pin>;
++		clocks = <&ccu CLK_CSI1_MCLK>;
++		clock-names = "xclk";
++
++		AVDD-supply = <&reg_ldo3>;
++		DOVDD-supply = <&reg_ldo3>;
++		DVDD-supply = <&reg_ldo4>;
++		reset-gpios = <&pio 4 23 GPIO_ACTIVE_LOW>; /* PE23 */
++		powerdown-gpios = <&pio 4 24 GPIO_ACTIVE_HIGH>; /* PE24 */
++
++		port {
++			ov5640_ep: endpoint {
++				remote-endpoint = <&csi1_ep>;
++				bus-width = <8>;
++				hsync-active = <1>; /* Active high */
++				vsync-active = <0>; /* Active low */
++				data-active = <1>;  /* Active high */
++				pclk-sample = <1>;  /* Rising */
++			};
++		};
++	};
++};
++
++&lradc {
++	vref-supply = <&reg_ldo2>;
++	status = "okay";
++
++	button-200 {
++		label = "Setup";
++		linux,code = <KEY_SETUP>;
++		channel = <0>;
++		voltage = <190000>;
++	};
++};
++
++&mmc0 {
++	vmmc-supply = <&reg_dcdc3>;
++	bus-width = <4>;
++	cd-gpios = <&pio 5 6 GPIO_ACTIVE_LOW>;
++	status = "okay";
++};
++
++&mmc1 {
++	vmmc-supply = <&reg_vcc_wifi>;
++	vqmmc-supply = <&reg_dcdc3>;
++	mmc-pwrseq = <&wifi_pwrseq>;
++	bus-width = <4>;
++	non-removable;
++	status = "okay";
++};
++
++&pio {
++	vcc-pd-supply = <&reg_dcdc3>;
++	vcc-pe-supply = <&reg_ldo3>;
++};
++
++#include "axp209.dtsi"
++
++&ac_power_supply {
++	status = "okay";
++};
++
++&reg_dcdc2 {
++	regulator-always-on;
++	regulator-min-microvolt = <1250000>;
++	regulator-max-microvolt = <1250000>;
++	regulator-name = "vdd-sys-cpu-ephy";
++};
++
++&reg_dcdc3 {
++	regulator-always-on;
++	regulator-min-microvolt = <3300000>;
++	regulator-max-microvolt = <3300000>;
++	regulator-name = "vcc-3v3";
++};
++
++&reg_ldo1 {
++	regulator-name = "vdd-rtc";
++};
++
++&reg_ldo2 {
++	regulator-always-on;
++	regulator-min-microvolt = <3000000>;
++	regulator-max-microvolt = <3000000>;
++	regulator-name = "avcc";
++};
++
++&reg_ldo3 {
++	regulator-min-microvolt = <2800000>;
++	regulator-max-microvolt = <2800000>;
++	regulator-name = "avdd-dovdd-2v8-csi";
++	regulator-soft-start;
++	regulator-ramp-delay = <1600>;
++};
++
++&reg_ldo4 {
++	regulator-min-microvolt = <1800000>;
++	regulator-max-microvolt = <1800000>;
++	regulator-name = "dvdd-1v8-csi";
++};
++
++&spi0 {
++	status = "okay";
++
++	flash@0 {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		compatible = "winbond,w25q128", "jedec,spi-nor";
++		reg = <0>;
++		spi-max-frequency = <40000000>;
++	};
++};
++
++&uart2 {
++	status = "okay";
++};
++
++&usb_otg {
++	dr_mode = "host";
++	status = "okay";
++};
++
++&usbphy {
++	usb0_vbus-supply = <&reg_vcc5v0>;
++	status = "okay";
++};
+diff --git a/arch/arm/dts/sun8i-v3.dtsi b/arch/arm/dts/sun8i-v3.dtsi
+new file mode 100644
+index 0000000000..ca4672ed2e
+--- /dev/null
++++ b/arch/arm/dts/sun8i-v3.dtsi
+@@ -0,0 +1,27 @@
++// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
++/*
++ * Copyright (C) 2019 Icenowy Zheng <icenowy@aosc.io>
++ */
++
++#include "sun8i-v3s.dtsi"
++
++&ccu {
++	compatible = "allwinner,sun8i-v3-ccu";
++};
++
++&emac {
++	/delete-property/ phy-handle;
++	/delete-property/ phy-mode;
++};
++
++&mdio_mux {
++	external_mdio: mdio@2 {
++		reg = <2>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++	};
++};
++
++&pio {
++	compatible = "allwinner,sun8i-v3-pinctrl";
++};
+diff --git a/arch/arm/dts/sun8i-v3s-licheepi-zero-dock.dts b/arch/arm/dts/sun8i-v3s-licheepi-zero-dock.dts
+new file mode 100644
+index 0000000000..db5cd0b857
+--- /dev/null
++++ b/arch/arm/dts/sun8i-v3s-licheepi-zero-dock.dts
+@@ -0,0 +1,96 @@
++/*
++ * Copyright (C) 2016 Icenowy Zheng <icenowy@aosc.xyz>
++ *
++ * This file is dual-licensed: you can use it either under the terms
++ * of the GPL or the X11 license, at your option. Note that this dual
++ * licensing only applies to this file, and not this project as a
++ * whole.
++ *
++ *  a) This file is free software; you can redistribute it and/or
++ *     modify it under the terms of the GNU General Public License as
++ *     published by the Free Software Foundation; either version 2 of the
++ *     License, or (at your option) any later version.
++ *
++ *     This file is distributed in the hope that it will be useful,
++ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *     GNU General Public License for more details.
++ *
++ * Or, alternatively,
++ *
++ *  b) Permission is hereby granted, free of charge, to any person
++ *     obtaining a copy of this software and associated documentation
++ *     files (the "Software"), to deal in the Software without
++ *     restriction, including without limitation the rights to use,
++ *     copy, modify, merge, publish, distribute, sublicense, and/or
++ *     sell copies of the Software, and to permit persons to whom the
++ *     Software is furnished to do so, subject to the following
++ *     conditions:
++ *
++ *     The above copyright notice and this permission notice shall be
++ *     included in all copies or substantial portions of the Software.
++ *
++ *     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
++ *     EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
++ *     OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
++ *     NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
++ *     HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
++ *     WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
++ *     FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
++ *     OTHER DEALINGS IN THE SOFTWARE.
++ */
++
++#include "sun8i-v3s-licheepi-zero.dts"
++
++#include <dt-bindings/input/input.h>
++
++/ {
++	model = "Lichee Pi Zero with Dock";
++	compatible = "licheepi,licheepi-zero-dock", "licheepi,licheepi-zero",
++		     "allwinner,sun8i-v3s";
++
++	leds {
++		/* The LEDs use PG0~2 pins, which conflict with MMC1 */
++		status = "disabled";
++	};
++};
++
++&mmc1 {
++	broken-cd;
++	bus-width = <4>;
++	vmmc-supply = <&reg_vcc3v3>;
++	status = "okay";
++};
++
++&lradc {
++	vref-supply = <&reg_vcc3v0>;
++	status = "okay";
++
++	button-200 {
++		label = "Volume Up";
++		linux,code = <KEY_VOLUMEUP>;
++		channel = <0>;
++		voltage = <200000>;
++	};
++
++	button-400 {
++		label = "Volume Down";
++		linux,code = <KEY_VOLUMEDOWN>;
++		channel = <0>;
++		voltage = <400000>;
++	};
++
++	button-600 {
++		label = "Select";
++		linux,code = <KEY_SELECT>;
++		channel = <0>;
++		voltage = <600000>;
++	};
++
++	button-800 {
++		label = "Start";
++		linux,code = <KEY_OK>;
++		channel = <0>;
++		voltage = <800000>;
++	};
++};
+diff --git a/arch/arm/dts/sun8i-v3s-licheepi-zero.dts b/arch/arm/dts/sun8i-v3s-licheepi-zero.dts
+index 3d9168cbae..2e4587d26c 100644
+--- a/arch/arm/dts/sun8i-v3s-licheepi-zero.dts
++++ b/arch/arm/dts/sun8i-v3s-licheepi-zero.dts
+@@ -55,11 +55,29 @@
+ 	chosen {
+ 		stdout-path = "serial0:115200n8";
+ 	};
++
++	leds {
++		compatible = "gpio-leds";
++
++		blue_led {
++			label = "licheepi:blue:usr";
++			gpios = <&pio 6 1 GPIO_ACTIVE_LOW>; /* PG1 */
++		};
++
++		green_led {
++			label = "licheepi:green:usr";
++			gpios = <&pio 6 0 GPIO_ACTIVE_LOW>; /* PG0 */
++			default-state = "on";
++		};
++
++		red_led {
++			label = "licheepi:red:usr";
++			gpios = <&pio 6 2 GPIO_ACTIVE_LOW>; /* PG2 */
++		};
++	};
+ };
+ 
+ &mmc0 {
+-	pinctrl-0 = <&mmc0_pins_a>;
+-	pinctrl-names = "default";
+ 	broken-cd;
+ 	bus-width = <4>;
+ 	vmmc-supply = <&reg_vcc3v3>;
+@@ -67,7 +85,7 @@
+ };
+ 
+ &uart0 {
+-	pinctrl-0 = <&uart0_pins_a>;
++	pinctrl-0 = <&uart0_pb_pins>;
+ 	pinctrl-names = "default";
+ 	status = "okay";
+ };
+@@ -78,6 +96,6 @@
+ };
+ 
+ &usbphy {
+-	usb0_id_det-gpio = <&pio 5 6 GPIO_ACTIVE_HIGH>;
++	usb0_id_det-gpios = <&pio 5 6 GPIO_ACTIVE_HIGH>;
+ 	status = "okay";
+ };
+diff --git a/arch/arm/dts/sun8i-v3s.dtsi b/arch/arm/dts/sun8i-v3s.dtsi
+index ebefc0fefe..0c73416769 100644
+--- a/arch/arm/dts/sun8i-v3s.dtsi
++++ b/arch/arm/dts/sun8i-v3s.dtsi
+@@ -40,16 +40,31 @@
+  *     OTHER DEALINGS IN THE SOFTWARE.
+  */
+ 
++#include <dt-bindings/interrupt-controller/arm-gic.h>
+ #include <dt-bindings/clock/sun8i-v3s-ccu.h>
+ #include <dt-bindings/reset/sun8i-v3s-ccu.h>
+-#include <dt-bindings/interrupt-controller/arm-gic.h>
+-#include <dt-bindings/pinctrl/sun4i-a10.h>
++#include <dt-bindings/clock/sun8i-de2.h>
+ 
+ / {
+ 	#address-cells = <1>;
+ 	#size-cells = <1>;
+ 	interrupt-parent = <&gic>;
+ 
++	chosen {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		ranges;
++
++		framebuffer-lcd {
++			compatible = "allwinner,simple-framebuffer",
++				     "simple-framebuffer";
++			allwinner,pipeline = "mixer0-lcd0";
++			clocks = <&display_clocks CLK_MIXER0>,
++				 <&ccu CLK_TCON0>;
++			status = "disabled";
++		};
++	};
++
+ 	cpus {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+@@ -62,6 +77,12 @@
+ 		};
+ 	};
+ 
++	de: display-engine {
++		compatible = "allwinner,sun8i-v3s-display-engine";
++		allwinner,pipelines = <&mixer0>;
++		status = "disabled";
++	};
++
+ 	timer {
+ 		compatible = "arm,armv7-timer";
+ 		interrupts = <GIC_PPI 13 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
+@@ -79,6 +100,7 @@
+ 			#clock-cells = <0>;
+ 			compatible = "fixed-clock";
+ 			clock-frequency = <24000000>;
++			clock-accuracy = <50000>;
+ 			clock-output-names = "osc24M";
+ 		};
+ 
+@@ -86,7 +108,8 @@
+ 			#clock-cells = <0>;
+ 			compatible = "fixed-clock";
+ 			clock-frequency = <32768>;
+-			clock-output-names = "osc32k";
++			clock-accuracy = <50000>;
++			clock-output-names = "ext-osc32k";
+ 		};
+ 	};
+ 
+@@ -96,7 +119,86 @@
+ 		#size-cells = <1>;
+ 		ranges;
+ 
+-		mmc0: mmc@01c0f000 {
++		display_clocks: clock@1000000 {
++			compatible = "allwinner,sun8i-v3s-de2-clk";
++			reg = <0x01000000 0x10000>;
++			clocks = <&ccu CLK_BUS_DE>,
++				 <&ccu CLK_DE>;
++			clock-names = "bus",
++				      "mod";
++			resets = <&ccu RST_BUS_DE>;
++			#clock-cells = <1>;
++			#reset-cells = <1>;
++		};
++
++		mixer0: mixer@1100000 {
++			compatible = "allwinner,sun8i-v3s-de2-mixer";
++			reg = <0x01100000 0x100000>;
++			clocks = <&display_clocks 0>,
++				 <&display_clocks 6>;
++			clock-names = "bus",
++				      "mod";
++			resets = <&display_clocks 0>;
++
++			ports {
++				#address-cells = <1>;
++				#size-cells = <0>;
++
++				mixer0_out: port@1 {
++					reg = <1>;
++
++					mixer0_out_tcon0: endpoint {
++						remote-endpoint = <&tcon0_in_mixer0>;
++					};
++				};
++			};
++		};
++
++		syscon: system-control@1c00000 {
++			compatible = "allwinner,sun8i-v3s-system-control",
++				     "allwinner,sun8i-h3-system-control";
++			reg = <0x01c00000 0x1000>;
++			#address-cells = <1>;
++			#size-cells = <1>;
++			ranges;
++		};
++
++		tcon0: lcd-controller@1c0c000 {
++			compatible = "allwinner,sun8i-v3s-tcon";
++			reg = <0x01c0c000 0x1000>;
++			interrupts = <GIC_SPI 86 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&ccu CLK_BUS_TCON0>,
++				 <&ccu CLK_TCON0>;
++			clock-names = "ahb",
++				      "tcon-ch0";
++			clock-output-names = "tcon-pixel-clock";
++			#clock-cells = <0>;
++			resets = <&ccu RST_BUS_TCON0>;
++			reset-names = "lcd";
++			status = "disabled";
++
++			ports {
++				#address-cells = <1>;
++				#size-cells = <0>;
++
++				tcon0_in: port@0 {
++					reg = <0>;
++
++					tcon0_in_mixer0: endpoint {
++						remote-endpoint = <&mixer0_out_tcon0>;
++					};
++				};
++
++				tcon0_out: port@1 {
++					#address-cells = <1>;
++					#size-cells = <0>;
++					reg = <1>;
++				};
++			};
++		};
++
++
++		mmc0: mmc@1c0f000 {
+ 			compatible = "allwinner,sun7i-a20-mmc";
+ 			reg = <0x01c0f000 0x1000>;
+ 			clocks = <&ccu CLK_BUS_MMC0>,
+@@ -110,12 +212,14 @@
+ 			resets = <&ccu RST_BUS_MMC0>;
+ 			reset-names = "ahb";
+ 			interrupts = <GIC_SPI 60 IRQ_TYPE_LEVEL_HIGH>;
++			pinctrl-names = "default";
++			pinctrl-0 = <&mmc0_pins>;
+ 			status = "disabled";
+ 			#address-cells = <1>;
+ 			#size-cells = <0>;
+ 		};
+ 
+-		mmc1: mmc@01c10000 {
++		mmc1: mmc@1c10000 {
+ 			compatible = "allwinner,sun7i-a20-mmc";
+ 			reg = <0x01c10000 0x1000>;
+ 			clocks = <&ccu CLK_BUS_MMC1>,
+@@ -129,12 +233,14 @@
+ 			resets = <&ccu RST_BUS_MMC1>;
+ 			reset-names = "ahb";
+ 			interrupts = <GIC_SPI 61 IRQ_TYPE_LEVEL_HIGH>;
++			pinctrl-names = "default";
++			pinctrl-0 = <&mmc1_pins>;
+ 			status = "disabled";
+ 			#address-cells = <1>;
+ 			#size-cells = <0>;
+ 		};
+ 
+-		mmc2: mmc@01c11000 {
++		mmc2: mmc@1c11000 {
+ 			compatible = "allwinner,sun7i-a20-mmc";
+ 			reg = <0x01c11000 0x1000>;
+ 			clocks = <&ccu CLK_BUS_MMC2>,
+@@ -153,7 +259,18 @@
+ 			#size-cells = <0>;
+ 		};
+ 
+-		usb_otg: usb@01c19000 {
++		crypto@1c15000 {
++			compatible = "allwinner,sun8i-v3s-crypto",
++				     "allwinner,sun8i-a33-crypto";
++			reg = <0x01c15000 0x1000>;
++			interrupts = <GIC_SPI 80 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&ccu CLK_BUS_CE>, <&ccu CLK_CE>;
++			clock-names = "ahb", "mod";
++			resets = <&ccu RST_BUS_CE>;
++			reset-names = "ahb";
++		};
++
++		usb_otg: usb@1c19000 {
+ 			compatible = "allwinner,sun8i-h3-musb";
+ 			reg = <0x01c19000 0x0400>;
+ 			clocks = <&ccu CLK_BUS_OTG>;
+@@ -166,7 +283,7 @@
+ 			status = "disabled";
+ 		};
+ 
+-		usbphy: phy@01c19400 {
++		usbphy: phy@1c19400 {
+ 			compatible = "allwinner,sun8i-v3s-usb-phy";
+ 			reg = <0x01c19400 0x2c>,
+ 			      <0x01c1a800 0x4>;
+@@ -180,64 +297,118 @@
+ 			#phy-cells = <1>;
+ 		};
+ 
+-		ccu: clock@01c20000 {
++		ccu: clock@1c20000 {
+ 			compatible = "allwinner,sun8i-v3s-ccu";
+ 			reg = <0x01c20000 0x400>;
+-			clocks = <&osc24M>, <&osc32k>;
++			clocks = <&osc24M>, <&rtc 0>;
+ 			clock-names = "hosc", "losc";
+ 			#clock-cells = <1>;
+ 			#reset-cells = <1>;
+ 		};
+ 
+-		rtc: rtc@01c20400 {
+-			compatible = "allwinner,sun6i-a31-rtc";
++		rtc: rtc@1c20400 {
++			#clock-cells = <1>;
++			compatible = "allwinner,sun8i-v3-rtc";
+ 			reg = <0x01c20400 0x54>;
+ 			interrupts = <GIC_SPI 40 IRQ_TYPE_LEVEL_HIGH>,
+ 				     <GIC_SPI 41 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&osc32k>;
++			clock-output-names = "osc32k", "osc32k-out";
+ 		};
+ 
+-		pio: pinctrl@01c20800 {
++		pio: pinctrl@1c20800 {
+ 			compatible = "allwinner,sun8i-v3s-pinctrl";
+ 			reg = <0x01c20800 0x400>;
+ 			interrupts = <GIC_SPI 15 IRQ_TYPE_LEVEL_HIGH>,
+ 				     <GIC_SPI 17 IRQ_TYPE_LEVEL_HIGH>;
+-			clocks = <&ccu CLK_BUS_PIO>, <&osc24M>, <&osc32k>;
++			clocks = <&ccu CLK_BUS_PIO>, <&osc24M>, <&rtc 0>;
+ 			clock-names = "apb", "hosc", "losc";
+ 			gpio-controller;
+ 			#gpio-cells = <3>;
+ 			interrupt-controller;
+ 			#interrupt-cells = <3>;
+ 
+-			uart0_pins_a: uart0@0 {
++			/omit-if-no-ref/
++			csi1_8bit_pins: csi1-8bit-pins {
++				pins = "PE0", "PE2", "PE3", "PE8", "PE9",
++				       "PE10", "PE11", "PE12", "PE13", "PE14",
++				       "PE15";
++				function = "csi";
++			};
++
++			/omit-if-no-ref/
++			csi1_mclk_pin: csi1-mclk-pin {
++				pins = "PE1";
++				function = "csi";
++			};
++
++			i2c0_pins: i2c0-pins {
++				pins = "PB6", "PB7";
++				function = "i2c0";
++			};
++
++			/omit-if-no-ref/
++			i2c1_pe_pins: i2c1-pe-pins {
++				pins = "PE21", "PE22";
++				function = "i2c1";
++			};
++
++			uart0_pb_pins: uart0-pb-pins {
+ 				pins = "PB8", "PB9";
+ 				function = "uart0";
+-				bias-pull-up;
+ 			};
+ 
+-			mmc0_pins_a: mmc0@0 {
++			uart2_pins: uart2-pins {
++				pins = "PB0", "PB1";
++				function = "uart2";
++			};
++
++			mmc0_pins: mmc0-pins {
+ 				pins = "PF0", "PF1", "PF2", "PF3",
+ 				       "PF4", "PF5";
+ 				function = "mmc0";
+ 				drive-strength = <30>;
+ 				bias-pull-up;
+ 			};
++
++			mmc1_pins: mmc1-pins {
++				pins = "PG0", "PG1", "PG2", "PG3",
++				       "PG4", "PG5";
++				function = "mmc1";
++				drive-strength = <30>;
++				bias-pull-up;
++			};
++
++			spi0_pins: spi0-pins {
++				pins = "PC0", "PC1", "PC2", "PC3";
++				function = "spi0";
++			};
+ 		};
+ 
+-		timer@01c20c00 {
+-			compatible = "allwinner,sun4i-a10-timer";
++		timer@1c20c00 {
++			compatible = "allwinner,sun8i-v3s-timer";
+ 			reg = <0x01c20c00 0xa0>;
+ 			interrupts = <GIC_SPI 18 IRQ_TYPE_LEVEL_HIGH>,
+-				     <GIC_SPI 19 IRQ_TYPE_LEVEL_HIGH>;
++				     <GIC_SPI 19 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 20 IRQ_TYPE_LEVEL_HIGH>;
+ 			clocks = <&osc24M>;
+ 		};
+ 
+-		wdt0: watchdog@01c20ca0 {
++		wdt0: watchdog@1c20ca0 {
+ 			compatible = "allwinner,sun6i-a31-wdt";
+ 			reg = <0x01c20ca0 0x20>;
+ 			interrupts = <GIC_SPI 25 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&osc24M>;
++		};
++
++		lradc: lradc@1c22800 {
++			compatible = "allwinner,sun4i-a10-lradc-keys";
++			reg = <0x01c22800 0x400>;
++			interrupts = <GIC_SPI 30 IRQ_TYPE_LEVEL_HIGH>;
++			status = "disabled";
+ 		};
+ 
+-		uart0: serial@01c28000 {
++		uart0: serial@1c28000 {
+ 			compatible = "snps,dw-apb-uart";
+ 			reg = <0x01c28000 0x400>;
+ 			interrupts = <GIC_SPI 0 IRQ_TYPE_LEVEL_HIGH>;
+@@ -248,7 +419,7 @@
+ 			status = "disabled";
+ 		};
+ 
+-		uart1: serial@01c28400 {
++		uart1: serial@1c28400 {
+ 			compatible = "snps,dw-apb-uart";
+ 			reg = <0x01c28400 0x400>;
+ 			interrupts = <GIC_SPI 1 IRQ_TYPE_LEVEL_HIGH>;
+@@ -259,7 +430,7 @@
+ 			status = "disabled";
+ 		};
+ 
+-		uart2: serial@01c28800 {
++		uart2: serial@1c28800 {
+ 			compatible = "snps,dw-apb-uart";
+ 			reg = <0x01c28800 0x400>;
+ 			interrupts = <GIC_SPI 2 IRQ_TYPE_LEVEL_HIGH>;
+@@ -267,11 +438,106 @@
+ 			reg-io-width = <4>;
+ 			clocks = <&ccu CLK_BUS_UART2>;
+ 			resets = <&ccu RST_BUS_UART2>;
++			pinctrl-0 = <&uart2_pins>;
++			pinctrl-names = "default";
++			status = "disabled";
++		};
++
++		i2c0: i2c@1c2ac00 {
++			compatible = "allwinner,sun6i-a31-i2c";
++			reg = <0x01c2ac00 0x400>;
++			interrupts = <GIC_SPI 6 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&ccu CLK_BUS_I2C0>;
++			resets = <&ccu RST_BUS_I2C0>;
++			pinctrl-names = "default";
++			pinctrl-0 = <&i2c0_pins>;
++			status = "disabled";
++			#address-cells = <1>;
++			#size-cells = <0>;
++		};
++
++		i2c1: i2c@1c2b000 {
++			compatible = "allwinner,sun6i-a31-i2c";
++			reg = <0x01c2b000 0x400>;
++			interrupts = <GIC_SPI 7 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&ccu CLK_BUS_I2C1>;
++			resets = <&ccu RST_BUS_I2C1>;
++			status = "disabled";
++			#address-cells = <1>;
++			#size-cells = <0>;
++		};
++
++		emac: ethernet@1c30000 {
++			compatible = "allwinner,sun8i-v3s-emac";
++			syscon = <&syscon>;
++			reg = <0x01c30000 0x10000>;
++			interrupts = <GIC_SPI 82 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-names = "macirq";
++			resets = <&ccu RST_BUS_EMAC>;
++			reset-names = "stmmaceth";
++			clocks = <&ccu CLK_BUS_EMAC>;
++			clock-names = "stmmaceth";
++			phy-handle = <&int_mii_phy>;
++			phy-mode = "mii";
++			status = "disabled";
++
++			mdio: mdio {
++				#address-cells = <1>;
++				#size-cells = <0>;
++				compatible = "snps,dwmac-mdio";
++			};
++
++			mdio_mux: mdio-mux {
++				compatible = "allwinner,sun8i-h3-mdio-mux";
++				#address-cells = <1>;
++				#size-cells = <0>;
++
++				mdio-parent-bus = <&mdio>;
++				/* Only one MDIO is usable at the time */
++				internal_mdio: mdio@1 {
++					compatible = "allwinner,sun8i-h3-mdio-internal";
++					reg = <1>;
++					#address-cells = <1>;
++					#size-cells = <0>;
++
++					int_mii_phy: ethernet-phy@1 {
++						compatible = "ethernet-phy-ieee802.3-c22";
++						reg = <1>;
++						clocks = <&ccu CLK_BUS_EPHY>;
++						resets = <&ccu RST_BUS_EPHY>;
++					};
++				};
++			};
++		};
++
++		spi0: spi@1c68000 {
++			compatible = "allwinner,sun8i-h3-spi";
++			reg = <0x01c68000 0x1000>;
++			interrupts = <GIC_SPI 65 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&ccu CLK_BUS_SPI0>, <&ccu CLK_SPI0>;
++			clock-names = "ahb", "mod";
++			pinctrl-names = "default";
++			pinctrl-0 = <&spi0_pins>;
++			resets = <&ccu RST_BUS_SPI0>;
++			status = "disabled";
++			#address-cells = <1>;
++			#size-cells = <0>;
++		};
++
++		csi1: camera@1cb4000 {
++			compatible = "allwinner,sun8i-v3s-csi";
++			reg = <0x01cb4000 0x3000>;
++			interrupts = <GIC_SPI 84 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&ccu CLK_BUS_CSI>,
++				 <&ccu CLK_CSI1_SCLK>,
++				 <&ccu CLK_DRAM_CSI>;
++			clock-names = "bus", "mod", "ram";
++			resets = <&ccu RST_BUS_CSI>;
+ 			status = "disabled";
+ 		};
+ 
+-		gic: interrupt-controller@01c81000 {
+-			compatible = "arm,cortex-a7-gic", "arm,cortex-a15-gic";
++		gic: interrupt-controller@1c81000 {
++			compatible = "arm,gic-400";
+ 			reg = <0x01c81000 0x1000>,
+ 			      <0x01c82000 0x1000>,
+ 			      <0x01c84000 0x2000>,

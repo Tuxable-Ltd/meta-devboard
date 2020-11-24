@@ -24,6 +24,8 @@ IMAGE_FSTYPES ?= "tar.xz wic wic.bmap"
 
 SPL_BINARY = "u-boot-sunxi-with-spl.bin"
 
+UBOOT_EXTLINUX_ROOT ?= "root=/dev/mmcblk0p1"
+
 require uboot-distro.inc
 
 UBOOT_EXTLINUX_CONSOLE = "console=ttyS0,115200n8"

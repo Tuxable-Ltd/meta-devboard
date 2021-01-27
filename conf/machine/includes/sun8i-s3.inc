@@ -8,6 +8,7 @@ SERIAL_CONSOLES ?= "115200n8;ttyS0"
 
 KERNEL_IMAGETYPE = "zImage"
 KBUILD_DEFCONFIG = "sunxi_defconfig"
+KCONFIG_MODE = "alldefconfig"
 
 require kernel-version.inc
 

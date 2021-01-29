@@ -6,8 +6,10 @@ SOC_FAMILY = "rk3399"
 MACHINE_FEATURES = "usbhost"
 SERIAL_CONSOLES ?= "1500000;ttyS2"
 
-PREFERRED_PROVIDER_virtual/kernel = "linux-mainline"
 KERNEL_IMAGETYPE = "Image"
+KBUILD_DEFCONFIG = "defconfig"
+
+require kernel-version.inc
 
 MACHINE_EXTRA_RRECOMMENDS += " \
 	kernel-image-image \

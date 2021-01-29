@@ -1,3 +1,5 @@
 DEVBOARD_KERNEL ??= "stable"
 PREFERRED_PROVIDER_virtual/kernel ?= "linux-${DEVBOARD_KERNEL}"
-PREFERRED_VERSION_linux-stable ?= "5.9%"
+PREFERRED_VERSION_linux-stable ?= "5.10%"
+
+KCONFIG_MODE ?= "alldefconfig"

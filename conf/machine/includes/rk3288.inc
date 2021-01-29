@@ -10,7 +10,6 @@ SERIAL_CONSOLES ?= "115200;ttyS2"
 
 KERNEL_IMAGETYPE = "zImage"
 KBUILD_DEFCONFIG = "multi_v7_defconfig"
-KCONFIG_MODE = "alldefconfig"
 
 require kernel-version.inc
 
